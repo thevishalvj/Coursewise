@@ -9,6 +9,10 @@ from typing import Protocol
 from .config import GEMINI_BASE_URL, GEMINI_MODEL
 
 
+class LLMUnavailable(RuntimeError):
+    """Gemini failed after retries (overloaded, network error, bad key)."""
+
+
 class LLM(Protocol):
     def complete(self, system: str, user: str) -> str: ...
 
@@ -25,11 +29,16 @@ class GeminiLLM:
         self.model = model
 
     def complete(self, system: str, user: str) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            temperature=0.2,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        )
+        from openai import APIError
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                temperature=0.2,
+                messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            )
+        except APIError as exc:
+            raise LLMUnavailable(f"Gemini is unavailable right now ({type(exc).__name__}). Try again shortly.") from exc
         return (response.choices[0].message.content or "").strip()
 
 

@@ -21,3 +21,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 # Chunks scoring below this cosine similarity are dropped as weak matches.
 # Measured on the catalog: off-topic questions top out near 0.17, real ones start near 0.38.
 MIN_SCORE = float(os.getenv("COURSEWISE_MIN_SCORE", "0.25"))
+
+# Redis answer cache. Leave REDIS_URL empty to turn caching off.
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CACHE_TTL_SECONDS = int(os.getenv("COURSEWISE_CACHE_TTL", str(7 * 24 * 3600)))

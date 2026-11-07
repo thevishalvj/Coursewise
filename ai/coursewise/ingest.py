@@ -37,4 +37,8 @@ def ingest(reset: bool = True) -> int:
 
 
 if __name__ == "__main__":
+    from .cache import get_cache
+
     print(f"Indexed {ingest()} chunks from {MARKDOWN_DIR}")
+    # Cached answers may cite chunks that just changed.
+    print(f"Cleared {get_cache().clear()} cached answers")

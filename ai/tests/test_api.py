@@ -1,13 +1,16 @@
+import fakeredis
 from fastapi.testclient import TestClient
 
 from coursewise.agent import build_graph
 from coursewise.api import app, get_agent
+from coursewise.cache import AnswerCache, NullCache, get_cache
 
 from .conftest import FakeLLM, FakeSearch, make_hit
 
 
-def client_with(search, llm=None):
+def client_with(search, llm=None, cache=None):
     app.dependency_overrides[get_agent] = lambda: build_graph(llm=llm or FakeLLM(), search_fn=search)
+    app.dependency_overrides[get_cache] = lambda: cache or NullCache()
     return TestClient(app)
 
 
@@ -45,3 +48,44 @@ def test_ask_accepts_course_filter():
     search = FakeSearch(default=[make_hit("CS X39", 0.6)])
     client_with(search).post("/ask", json={"question": "What is covered?", "course_codes": ["CS 439"]})
     assert search.calls[0]["course_codes"] == ["CS 439"]
+
+
+def test_repeated_question_is_served_from_cache():
+    search, llm = FakeSearch(default=[make_hit("CS X39", 0.6)]), FakeLLM()
+    client = client_with(search, llm, cache=AnswerCache(fakeredis.FakeRedis()))
+    first = client.post("/ask", json={"question": "What does CS 439 cover?"}).json()
+    second = client.post("/ask", json={"question": "  what does cs 439 cover  "}).json()
+    assert first["cached"] is False
+    assert second["cached"] is True
+    assert second["answer"] == first["answer"]
+    assert second["sources"] == first["sources"]
+    assert len(llm.calls) == 1
+
+
+def test_cache_down_still_answers():
+    class BrokenRedis:
+        def get(self, key):
+            raise ConnectionError("redis down")
+
+        def set(self, *args, **kwargs):
+            raise ConnectionError("redis down")
+
+    client = client_with(FakeSearch(default=[make_hit("CS X39", 0.6)]), cache=AnswerCache(BrokenRedis()))
+    body = client.post("/ask", json={"question": "What does CS 439 cover?"}).json()
+    assert body["answer"] == "Fake answer [1]."
+    assert body["cached"] is False
+
+
+def test_llm_failure_returns_503_and_is_not_cached():
+    from coursewise.llm import LLMUnavailable
+
+    class DownLLM:
+        def complete(self, system, user):
+            raise LLMUnavailable("Gemini is unavailable right now")
+
+    cache = AnswerCache(fakeredis.FakeRedis())
+    client = client_with(FakeSearch(default=[make_hit("CS X39", 0.6)]), llm=DownLLM(), cache=cache)
+    resp = client.post("/ask", json={"question": "What does CS 439 cover?"})
+    assert resp.status_code == 503
+    assert "unavailable" in resp.json()["detail"]
+    assert cache.client.keys("*") == []

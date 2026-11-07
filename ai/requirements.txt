@@ -8,3 +8,5 @@ uvicorn[standard]>=0.50
 python-dotenv>=1.2
 httpx>=0.28
 pytest>=9.0
+redis>=5.0
+fakeredis>=2.20

@@ -7,7 +7,7 @@ course catalog entries and syllabi.
 
 - **AI service (`ai/`):** FastAPI, LangGraph, ChromaDB, sentence-transformers, Gemini
 - **Web app (`web/`):** Next.js, Prisma, Supabase (Postgres and email login). Setup is in `web/README.md`.
-- **Planned:** Redis caching, Docker
+- **Cache:** Redis stores answers to repeated questions for 7 days
 
 ## Data
 
@@ -60,3 +60,21 @@ LangGraph runs four steps: **classify** the question by route, **retrieve** chun
 ChromaDB (filtered by any course codes in the question), **filter** weak matches (only when no
 course is named), and **generate** an answer with Gemini using only the retrieved text. Off-topic
 questions and questions with no matching sources are answered without calling Gemini.
+
+### Redis cache
+
+`/ask` caches each answer in Redis, keyed by the normalized question, any course filter, and the
+Gemini model. Repeat questions skip retrieval and Gemini entirely, and responses include `"cached": true`.
+Rebuilding the index clears the cache. If Redis is not running, the service still answers, just without caching.
+Set `REDIS_URL=` (empty) in `ai/.env` to turn caching off.
+
+Measured with `python eval/benchmark_cache.py` (local Redis, Gemini free tier):
+
+| | Median | p95 |
+|---|---|---|
+| Cache miss, answered by Gemini (4 questions) | 25 s | 48 s |
+| Cache hit | 3 ms | 4 ms |
+
+The miss times are inflated: the free tier rate-limited the benchmark, so many requests waited on
+retries, and 12 of 20 questions were skipped. Unhurried single questions took 3 to 10 seconds. Either
+way, a cache hit is three to four orders of magnitude faster.
