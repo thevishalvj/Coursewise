@@ -1,0 +1,1 @@
+"""Coursewise AI service."""
