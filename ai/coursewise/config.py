@@ -13,3 +13,11 @@ EMBEDDING_MODEL = os.getenv("COURSEWISE_EMBEDDING_MODEL", "sentence-transformers
 
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 120
+
+# Gemini, through its OpenAI-compatible endpoint.
+GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+
+# Chunks scoring below this cosine similarity are dropped as weak matches.
+# Measured on the catalog: off-topic questions top out near 0.17, real ones start near 0.38.
+MIN_SCORE = float(os.getenv("COURSEWISE_MIN_SCORE", "0.25"))
