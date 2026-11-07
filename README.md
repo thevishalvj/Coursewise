@@ -3,10 +3,11 @@
 A personal RAG assistant for UT Austin CS courses. It answers questions from
 course catalog entries and syllabi.
 
-## Planned stack
+## Stack
 
-- **AI service:** FastAPI, LangGraph, ChromaDB, sentence-transformers, Gemini, Redis
-- **Web app:** Next.js, Prisma, Supabase (Postgres)
+- **AI service (`ai/`):** FastAPI, LangGraph, ChromaDB, sentence-transformers, Gemini
+- **Web app (`web/`):** Next.js, Prisma, Supabase (Postgres and email login). Setup is in `web/README.md`.
+- **Planned:** Redis caching, Docker
 
 ## Data
 
