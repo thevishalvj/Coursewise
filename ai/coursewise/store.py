@@ -11,7 +11,12 @@ from .config import CHROMA_DIR, COLLECTION_NAME, EMBEDDING_MODEL
 def get_embedder():
     from sentence_transformers import SentenceTransformer
 
-    return SentenceTransformer(EMBEDDING_MODEL)
+    # Use the downloaded copy if there is one, so startup works offline and skips
+    # update checks against Hugging Face. Download only the first time.
+    try:
+        return SentenceTransformer(EMBEDDING_MODEL, local_files_only=True)
+    except OSError:
+        return SentenceTransformer(EMBEDDING_MODEL)
 
 
 def embed(texts: list[str]) -> list[list[float]]:

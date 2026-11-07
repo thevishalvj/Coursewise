@@ -1,0 +1,44 @@
+# Run the whole app locally:
+#   docker compose --env-file web/.env.local up --build
+# Then open http://localhost:3000
+#
+# --env-file supplies the NEXT_PUBLIC_* build args for the web image.
+# Each service also reads its own env file at runtime (ai/.env, web/.env.local).
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ai:
+    build:
+      context: .
+      dockerfile: ai/Dockerfile
+    env_file: ai/.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: web
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?set it in web/.env.local}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:?set it in web/.env.local}
+    env_file: web/.env.local
+    environment:
+      AI_SERVICE_URL: http://ai:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      ai:
+        condition: service_healthy

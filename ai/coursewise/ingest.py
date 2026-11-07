@@ -25,7 +25,7 @@ def ingest(reset: bool = True) -> int:
     if reset and collection.count():
         collection.delete(ids=collection.get(include=[])["ids"])
     for start in range(0, len(chunks), BATCH):
-        batch = chunks[start:start + BATCH]
+        batch = chunks[start : start + BATCH]
         collection.upsert(
             ids=[chunk_id(c.metadata["source"], c.metadata["chunk_index"]) for c in batch],
             documents=[c.text for c in batch],

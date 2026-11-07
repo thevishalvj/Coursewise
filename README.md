@@ -8,6 +8,7 @@ course catalog entries and syllabi.
 - **AI service (`ai/`):** FastAPI, LangGraph, ChromaDB, sentence-transformers, Gemini
 - **Web app (`web/`):** Next.js, Prisma, Supabase (Postgres and email login). Setup is in `web/README.md`.
 - **Cache:** Redis stores answers to repeated questions for 7 days
+- **Tooling:** Docker and docker-compose, GitHub Actions CI, and an MCP server for Claude or Cursor
 
 ## Data
 
@@ -28,7 +29,7 @@ Setup, once:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r ai/requirements.txt
+pip install -r ai/requirements-dev.txt
 cp ai/.env.example ai/.env   # then add your Gemini key
 cd ai && python -m coursewise.ingest
 ```
@@ -78,3 +79,55 @@ Measured with `python eval/benchmark_cache.py` (local Redis, Gemini free tier):
 The miss times are inflated: the free tier rate-limited the benchmark, so many requests waited on
 retries, and 12 of 20 questions were skipped. Unhurried single questions took 3 to 10 seconds. Either
 way, a cache hit is three to four orders of magnitude faster.
+
+## Docker
+
+Run Redis, the AI service, and the web app together. Fill in `ai/.env` and `web/.env.local` first.
+
+```bash
+docker compose --env-file web/.env.local up --build
+```
+
+Then open http://localhost:3000. The AI image builds the embedding model and the course index into
+the image, so the first build takes a few minutes and the container starts without internet access
+(except for Gemini).
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push and pull request:
+
+| Job | Steps |
+|---|---|
+| AI service | ruff lint and format check, build the index, pytest, retrieval eval |
+| Web app | ESLint, TypeScript typecheck, production build |
+| Docker | Build both images (after the other two jobs pass) |
+
+CI needs no secrets: tests use a fake LLM and fake Redis.
+
+## MCP server
+
+`coursewise.mcp_server` lets Claude or Cursor search your courses directly. It has three read-only
+tools: `search_courses`, `get_course`, and `list_courses`. It returns course text with sources and does
+not call Gemini, so it costs nothing to use. Build the index first (`python -m coursewise.ingest`).
+
+In the examples below, replace `/path/to/Coursewise` with the folder where you cloned the repo.
+
+**Claude Code:**
+
+```bash
+claude mcp add coursewise -e PYTHONPATH=/path/to/Coursewise/ai -- /path/to/Coursewise/.venv/bin/python -m coursewise.mcp_server
+```
+
+**Claude Desktop or Cursor** (`claude_desktop_config.json` or `.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "coursewise": {
+      "command": "/path/to/Coursewise/.venv/bin/python",
+      "args": ["-m", "coursewise.mcp_server"],
+      "env": { "PYTHONPATH": "/path/to/Coursewise/ai" }
+    }
+  }
+}
+```

@@ -34,7 +34,8 @@ def timed_ask(client: httpx.Client, url: str, question: str) -> tuple[float, dic
 
 def summary(label: str, ms: list[float]) -> str:
     p95 = sorted(ms)[max(0, int(len(ms) * 0.95) - 1)]
-    return f"{label:<12} median {statistics.median(ms):8.1f} ms   p95 {p95:8.1f} ms   mean {statistics.mean(ms):8.1f} ms"
+    median, mean = statistics.median(ms), statistics.mean(ms)
+    return f"{label:<12} median {median:8.1f} ms   p95 {p95:8.1f} ms   mean {mean:8.1f} ms"
 
 
 def main() -> int:

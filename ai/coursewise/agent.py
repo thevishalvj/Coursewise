@@ -10,7 +10,8 @@ Routes:
 from __future__ import annotations
 
 import re
-from typing import Callable, TypedDict
+from collections.abc import Callable
+from typing import TypedDict
 
 from langgraph.graph import END, StateGraph
 
@@ -26,7 +27,10 @@ GRADING_RE = re.compile(
 )
 
 NO_INFO = "I don't have information about that in my sources yet."
-OFF_TOPIC = "I can only help with questions about UT CS courses, like what a course covers, how it's graded, or how two courses compare."
+OFF_TOPIC = (
+    "I can only help with questions about UT CS courses, like what a course covers, "
+    "how it's graded, or how two courses compare."
+)
 
 
 class AgentState(TypedDict, total=False):

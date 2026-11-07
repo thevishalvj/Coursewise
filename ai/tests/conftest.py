@@ -19,8 +19,13 @@ def make_hit(course: str, score: float, doc_type: str = "catalog", text: str = "
     number = course.split("X")[-1]
     return Hit(
         text=f"[{course}] {text}",
-        metadata={"course_code": course, "course_number": number, "doc_type": doc_type,
-                  "source": f"{doc_type}/{course.lower().replace(' ', '-')}.md", "title": "T"},
+        metadata={
+            "course_code": course,
+            "course_number": number,
+            "doc_type": doc_type,
+            "source": f"{doc_type}/{course.lower().replace(' ', '-')}.md",
+            "title": "T",
+        },
         score=score,
     )
 

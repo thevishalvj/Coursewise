@@ -29,7 +29,7 @@ def parse_front_matter(text: str) -> tuple[dict, str]:
             continue
         key, value = line.split(":", 1)
         meta[key.strip()] = value.strip().strip('"').strip("'")
-    return meta, text[match.end():]
+    return meta, text[match.end() :]
 
 
 def split_by_heading(body: str) -> list[tuple[str, str]]:
@@ -44,7 +44,7 @@ def split_by_heading(body: str) -> list[tuple[str, str]]:
         level, title = len(m.group(1)), m.group(2).strip()
         stack = [s for s in stack if s[0] < level] + [(level, title)]
         end = matches[i + 1].start() if i + 1 < len(matches) else len(body)
-        content = body[m.end():end].strip()
+        content = body[m.end() : end].strip()
         if content:
             sections.append((" > ".join(t for _, t in stack), content))
     return sections

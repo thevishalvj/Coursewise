@@ -13,7 +13,9 @@ Rules:
 ROUTE_INSTRUCTIONS = {
     "course_info": "Explain what the course covers.",
     "grading": "Answer the question about grading, exams, homework, or course policies.",
-    "compare": "Compare the courses side by side: topics, focus, and how they differ. Use a short bullet list per course.",
+    "compare": (
+        "Compare the courses side by side: topics, focus, and how they differ. Use a short bullet list per course."
+    ),
 }
 
 

@@ -45,5 +45,5 @@ def search(
     )
     return [
         Hit(text=doc, metadata=meta, score=1 - dist)
-        for doc, meta, dist in zip(result["documents"][0], result["metadatas"][0], result["distances"][0])
+        for doc, meta, dist in zip(result["documents"][0], result["metadatas"][0], result["distances"][0], strict=True)
     ]

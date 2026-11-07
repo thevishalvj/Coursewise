@@ -16,8 +16,8 @@ from __future__ import annotations
 import html
 import re
 import sys
-from collections import Counter
 import urllib.request
+from collections import Counter
 from pathlib import Path
 
 CATALOG_URL = "https://catalog.utexas.edu/general-information/coursesatoz/c-s/"
@@ -55,15 +55,17 @@ def parse(page: str) -> list[dict]:
         if not code:
             continue
         end = matches[i + 1].start() if i + 1 < len(matches) else len(body)
-        paragraphs = [clean(p) for p in re.findall(r"<p[^>]*>(.*?)</p>", body[m.end():end], re.S)]
+        paragraphs = [clean(p) for p in re.findall(r"<p[^>]*>(.*?)</p>", body[m.end() : end], re.S)]
         hours, number, title = code.groups()
-        courses.append({
-            "course_code": f"CS {hours}{number}",
-            "course_number": number,
-            "title": title,
-            "level": level,
-            "description": "\n\n".join(p for p in paragraphs if p),
-        })
+        courses.append(
+            {
+                "course_code": f"CS {hours}{number}",
+                "course_number": number,
+                "title": title,
+                "level": level,
+                "description": "\n\n".join(p for p in paragraphs if p),
+            }
+        )
     return courses
 
 
